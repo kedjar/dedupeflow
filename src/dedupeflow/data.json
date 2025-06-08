@@ -1,0 +1,5 @@
+{
+  "numeric": {
+    "similarity": "dedupeflow.numeric.numeric_similarity"
+  }
+}
