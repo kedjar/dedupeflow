@@ -1,14 +1,52 @@
-"""Record linkage package for efficient entity resolution."""
+"""DedupeFlow: A modern Python library for data deduplication and record linkage.
 
-__version__ = "0.1.0"
+This package provides efficient algorithms and tools for:
+- String similarity comparison
+- Numeric value matching
+- Date/time comparison
+- Record deduplication
+- Entity resolution
+"""
 
-from .comparators.string import levenshtein_similarity, jaro_winkler_similarity
-from .comparators.numeric import numeric_similarity
-from .comparators.date import date_similarity
+from importlib.metadata import version
+
+from dedupeflow.comparators import DateComparator, NumericComparator, StringComparator
+from dedupeflow.core.engine import DedupeEngine
+from dedupeflow.core.matching import MatchingEngine
+from dedupeflow.models import DedupeConfig, DedupeResults, FieldConfig, MatchResult
+from dedupeflow.strategies import (
+    ExactMatchStrategy,
+    FuzzyMatchStrategy,
+    ThresholdStrategy,
+)
+from dedupeflow.types import SimilarityScore
+
+# from dedupeflow.core import (
+#     DedupeEngine,
+#     MatchingEngine,
+# )
+
+
+__version__ = version("dedupeflow")
 
 __all__ = [
-    "levenshtein_similarity",
-    "jaro_winkler_similarity", 
-    "numeric_similarity",
-    "date_similarity",
+    # Core classes
+    "DedupeEngine",
+    "MatchingEngine",
+    "MatchResult",
+    "DedupeResults",
+    "SimilarityScore",
+    # Configuration
+    "DedupeConfig",
+    "FieldConfig",
+    # Comparators
+    "StringComparator",
+    "NumericComparator",
+    "DateComparator",
+    # Strategies
+    "ExactMatchStrategy",
+    "FuzzyMatchStrategy",
+    "ThresholdStrategy",
+    # Version
+    "__version__",
 ]

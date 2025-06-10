@@ -1,12 +1,13 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build_meta"
 
 [project]
 name = "dedupeflow"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A modern Python library for data deduplication and record linkage"
 readme = "README.md"
+requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
     {name = "M'Hand KEDJAR", email = "kedjar@gmail.com"}
@@ -30,23 +31,30 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
-requires-python = ">=3.9"
 dependencies = [
     "numpy>=1.20.0",
     "pandas>=1.3.0",
-    "scikit-learn>=1.0.0",
-    "jellyfish>=0.9.0",
-    "python-Levenshtein>=0.12.0",
-    "termcolor>=1.1.0,<3",
     "pydantic>=2.0.0",
     "typer>=0.9.0",
+    "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
-dev = [
+phonetic = [
+    "jellyfish>=0.9.0",
+    "python-Levenshtein>=0.12.0",
+]
+ml = [
+    "scikit-learn>=1.0.0",
+]
+test = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "pytest-xdist>=3.0",
+    "pytest-benchmark>=4.0",
+]
+dev = [
+    "dedupeflow[test,phonetic,ml]",
     "black>=23.0",
     "isort>=5.12",
     "flake8>=6.0",
@@ -61,12 +69,6 @@ docs = [
     "sphinx-autodoc-typehints>=1.24",
     "myst-parser>=2.0",
 ]
-test = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "pytest-xdist>=3.0",
-    "pytest-benchmark>=4.0",
-]
 
 [project.urls]
 "Homepage" = "https://github.com/kedjar/dedupeflow"
@@ -78,13 +80,11 @@ test = [
 [project.scripts]
 dedupeflow = "dedupeflow.cli:app"
 
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["dedupeflow*"]
-exclude = ["tests*"]
+[tool.hatch.version]
+path = "src/dedupeflow/__init__.py"
 
-[tool.setuptools.package-data]
-"dedupeflow" = ["*.json", "py.typed"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/dedupeflow"]
 
 # Black configuration
 [tool.black]

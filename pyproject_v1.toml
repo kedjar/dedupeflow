@@ -4,9 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dedupeflow"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A modern Python library for data deduplication and record linkage"
 readme = "README.md"
+requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
     {name = "M'Hand KEDJAR", email = "kedjar@gmail.com"}
@@ -30,23 +31,30 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
-requires-python = ">=3.9"
 dependencies = [
     "numpy>=1.20.0",
     "pandas>=1.3.0",
-    "scikit-learn>=1.0.0",
-    "jellyfish>=0.9.0",
-    "python-Levenshtein>=0.12.0",
-    "termcolor>=1.1.0,<3",
     "pydantic>=2.0.0",
     "typer>=0.9.0",
+    "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
-dev = [
+phonetic = [
+    "jellyfish>=0.9.0",
+    "python-Levenshtein>=0.12.0",
+]
+ml = [
+    "scikit-learn>=1.0.0",
+]
+test = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "pytest-xdist>=3.0",
+    "pytest-benchmark>=4.0",
+]
+dev = [
+    "dedupeflow[test,phonetic,ml]",
     "black>=23.0",
     "isort>=5.12",
     "flake8>=6.0",
@@ -54,18 +62,13 @@ dev = [
     "mypy>=1.0",
     "pre-commit>=3.0",
     "tox>=4.0",
+    "hatchling",  # Add hatchling to dev dependencies
 ]
 docs = [
     "sphinx>=7.0",
     "sphinx-rtd-theme>=1.3",
     "sphinx-autodoc-typehints>=1.24",
     "myst-parser>=2.0",
-]
-test = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "pytest-xdist>=3.0",
-    "pytest-benchmark>=4.0",
 ]
 
 [project.urls]
@@ -78,15 +81,17 @@ test = [
 [project.scripts]
 dedupeflow = "dedupeflow.cli:app"
 
+# Setuptools-specific configuration (if using setuptools)
+[tool.setuptools.dynamic]
+version = {attr = "dedupeflow.__version__"}
+
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["dedupeflow*"]
-exclude = ["tests*"]
 
 [tool.setuptools.package-data]
-"dedupeflow" = ["*.json", "py.typed"]
+dedupeflow = ["py.typed"]
 
-# Black configuration
+# Rest of your tool configurations remain the same...
 [tool.black]
 line-length = 88
 target-version = ["py39", "py310", "py311", "py312"]
@@ -104,7 +109,6 @@ extend-exclude = '''
 )/
 '''
 
-# isort configuration
 [tool.isort]
 profile = "black"
 multi_line_output = 3
@@ -115,7 +119,6 @@ ensure_newline_before_comments = true
 line_length = 88
 skip_gitignore = true
 
-# pytest configuration
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = [
@@ -140,7 +143,6 @@ filterwarnings = [
     "ignore::PendingDeprecationWarning"
 ]
 
-# Coverage configuration
 [tool.coverage.run]
 source = ["dedupeflow"]
 branch = true
@@ -166,7 +168,6 @@ exclude_lines = [
 show_missing = true
 skip_covered = false
 
-# MyPy configuration
 [tool.mypy]
 python_version = "3.9"
 warn_return_any = true
