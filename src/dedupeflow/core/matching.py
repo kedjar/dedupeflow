@@ -35,13 +35,55 @@ class MatchingEngine:
             require_all_fields: Whether all fields must be present for matching
         """
         self.field_configs = field_configs
-        self.match_strategy = match_strategy or ThresholdStrategy(global_threshold)
         self.global_threshold = global_threshold
         self.require_all_fields = require_all_fields
+        self.comparators = {}
+        self._setup_comparators()
+        self.match_strategy = match_strategy or ThresholdStrategy(
+            threshold=global_threshold
+        )
 
         # Initialize comparators for each field
         self.comparators: Dict[FieldName, Comparator] = {}
         self._setup_comparators()
+
+    def get_statistics(self, results: list) -> dict:
+        """Compute statistics from a list of MatchResult objects."""
+        if not results:
+            return {
+                "total_comparisons": 0,
+                "total_matches": 0,
+                "match_rate": 0.0,
+                "avg_score": 0.0,
+            }
+        total = len(results)
+        matches = sum(1 for r in results if getattr(r, "is_match", False))
+        avg_score = (
+            sum(float(getattr(r, "overall_score", 0.0)) for r in results) / total
+        )
+        stats = {
+            "total_comparisons": total,
+            "total_matches": matches,
+            "match_rate": matches / total if total else 0.0,
+            "avg_score": avg_score,
+        }
+        # Add per-field average scores if available
+        if hasattr(results[0], "field_scores"):
+            for field in results[0].field_scores:
+                field_avg = (
+                    sum(float(r.field_scores.get(field, 0.0)) for r in results) / total
+                )
+                stats[f"{field}_avg_score"] = field_avg
+        return stats
+
+    def update_match_strategy(self, new_strategy):
+        """Update the matching strategy."""
+        self.match_strategy = new_strategy
+        logger.debug(f"Updated match strategy to {new_strategy}")
+
+    def get_field_weights(self):
+        """Return a dictionary of field names to their weights."""
+        return {str(fc.name): fc.weight for fc in self.field_configs}
 
     def _setup_comparators(self) -> None:
         """Set up comparators based on field configurations."""
@@ -79,9 +121,9 @@ class MatchingEngine:
 
     def compare_records(
         self,
-        id1: RecordId,
+        id1: str,
         record1: Record,
-        id2: RecordId,
+        id2: str,
         record2: Record,
     ) -> MatchResult:
         """Compare two records and return a detailed match result."""
@@ -203,7 +245,7 @@ class MatchingEngine:
         return max(0.0, min(1.0, confidence))
 
     def batch_compare(
-        self, record_pairs: List[Tuple[RecordId, Record, RecordId, Record]]
+        self, record_pairs: List[Tuple[str, Record, str, Record]]
     ) -> List[MatchResult]:
         """Compare multiple record pairs in batch."""
         from dedupeflow.models import MatchResult

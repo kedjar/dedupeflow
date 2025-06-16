@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import re
-from typing import Optional, Set
+from typing import Optional, Set, cast
 
 import jellyfish
 import Levenshtein
+import numpy as np
+from scipy.sparse import csr_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -20,7 +22,7 @@ class StringComparator(BaseComparator):
     def __init__(
         self,
         method: str = "levenshtein",
-        case_sensitive: bool = False,
+        case_sensitive: bool = True,
         normalize_whitespace: bool = True,
         remove_punctuation: bool = False,
     ):
@@ -113,6 +115,7 @@ class StringComparator(BaseComparator):
         vectorizer = TfidfVectorizer(analyzer="char", ngram_range=(2, 3))
         try:
             tfidf_matrix = vectorizer.fit_transform([a, b])
+            tfidf_matrix = cast(csr_matrix, tfidf_matrix)  # Explicit cast
             similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
             return SimilarityScore(float(similarity))
         except ValueError:

@@ -12,7 +12,7 @@ from dedupeflow.core.blocking import (
     SoundexBlockingStrategy,
     StandardBlockingStrategy,
 )
-from dedupeflow.types import RecordId
+from dedupeflow.types import FieldName, RecordId
 
 
 class TestStandardBlockingStrategy:
@@ -34,7 +34,9 @@ class TestStandardBlockingStrategy:
         )
 
         strategy = StandardBlockingStrategy()
-        pairs = list(strategy.generate_pairs(data, ["name"], "id"))
+        pairs = list(
+            strategy.generate_pairs(data, [FieldName("name")], FieldName("id"))
+        )
 
         # Should generate pairs for records with same name
         expected_pairs = [(RecordId(1), RecordId(2))]
@@ -49,12 +51,14 @@ class TestStandardBlockingStrategy:
         strategy = StandardBlockingStrategy()
 
         row = pd.Series({"name": "John Smith", "city": "New York"})
-        key = strategy._create_block_key(row, ["name", "city"])
+        key = strategy._create_block_key(row, [FieldName("name"), FieldName("city")])
         assert key == "john smith|new york"
 
         # Test with missing values
         row_missing = pd.Series({"name": "John Smith", "city": None})
-        key_missing = strategy._create_block_key(row_missing, ["name", "city"])
+        key_missing = strategy._create_block_key(
+            row_missing, [FieldName("name"), FieldName("city")]
+        )
         assert key_missing == "john smith|"
 
 
@@ -67,7 +71,9 @@ class TestSoundexBlockingStrategy:
         data = pd.DataFrame({"id": [1, 2, 3], "name": ["Smith", "Smyth", "Johnson"]})
 
         strategy = SoundexBlockingStrategy()
-        pairs = list(strategy.generate_pairs(data, ["name"], "id"))
+        pairs = list(
+            strategy.generate_pairs(data, [FieldName("name")], FieldName("id"))
+        )
 
         # Smith and Smyth should be in same block (same Soundex)
         pair_ids = [(int(p[0]), int(p[1])) for p in pairs]
@@ -88,7 +94,7 @@ class TestNGramBlockingStrategy:
         strategy = NGramBlockingStrategy(n=2)
 
         row = pd.Series({"name": "test"})
-        ngrams = strategy._extract_ngrams(row, ["name"])
+        ngrams = strategy._extract_ngrams(row, [FieldName("name")])
 
         expected_ngrams = {"te", "es", "st"}
         assert ngrams == expected_ngrams
@@ -98,7 +104,9 @@ class TestNGramBlockingStrategy:
         data = pd.DataFrame({"id": [1, 2, 3], "name": ["testing", "test", "example"]})
 
         strategy = NGramBlockingStrategy(n=2, min_tokens=1)
-        pairs = list(strategy.generate_pairs(data, ["name"], "id"))
+        pairs = list(
+            strategy.generate_pairs(data, [FieldName("name")], FieldName("id"))
+        )
 
         # testing and test should share n-grams
         pair_ids = [(int(p[0]), int(p[1])) for p in pairs]
@@ -126,11 +134,11 @@ class TestCanopyBlockingStrategy:
         record3 = pd.Series({"name": "Jane Doe"})
 
         # Same records should have high similarity
-        sim1 = strategy._calculate_similarity(record1, record2, ["name"])
+        sim1 = strategy._calculate_similarity(record1, record2, [FieldName("name")])
         assert sim1 == 1.0
 
         # Different records should have lower similarity
-        sim2 = strategy._calculate_similarity(record1, record3, ["name"])
+        sim2 = strategy._calculate_similarity(record1, record3, [FieldName("name")])
         assert sim2 < 1.0
 
 
@@ -152,13 +160,19 @@ class TestHashBlockingStrategy:
         row = pd.Series({"name": "testing"})
 
         # Test different hash functions
-        result1 = strategy._apply_hash_function(row, ["name"], "first_3_chars")
+        result1 = strategy._apply_hash_function(
+            row, [FieldName("name")], "first_3_chars"
+        )
         assert result1 == "tes"
 
-        result2 = strategy._apply_hash_function(row, ["name"], "last_3_chars")
+        result2 = strategy._apply_hash_function(
+            row, [FieldName("name")], "last_3_chars"
+        )
         assert result2 == "ing"
 
-        result3 = strategy._apply_hash_function(row, ["name"], "length_bucket")
+        result3 = strategy._apply_hash_function(
+            row, [FieldName("name")], "length_bucket"
+        )
         assert result3 == "len_5"  # "testing" has 7 chars, bucket is 5
 
     def test_generate_pairs_hash(self):
@@ -166,7 +180,9 @@ class TestHashBlockingStrategy:
         data = pd.DataFrame({"id": [1, 2, 3], "name": ["test", "testing", "example"]})
 
         strategy = HashBlockingStrategy(hash_functions=["first_3_chars"])
-        pairs = list(strategy.generate_pairs(data, ["name"], "id"))
+        pairs = list(
+            strategy.generate_pairs(data, [FieldName("name")], FieldName("id"))
+        )
 
         # test and testing should be in same block (both start with "tes")
         pair_ids = [(int(p[0]), int(p[1])) for p in pairs]

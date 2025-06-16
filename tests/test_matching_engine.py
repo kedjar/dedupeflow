@@ -7,7 +7,8 @@ import pytest
 from dedupeflow.core.matching import MatchingEngine
 from dedupeflow.models import ComparatorType, FieldConfig, MatchResult
 from dedupeflow.strategies import ThresholdStrategy
-from dedupeflow.types import RecordId, SimilarityScore
+from dedupeflow.types import FieldName, RecordId, SimilarityScore
+from tests.conftest import create_record
 
 
 class TestMatchingEngine:
@@ -16,8 +17,12 @@ class TestMatchingEngine:
     def test_init(self):
         """Test matching engine initialization."""
         field_configs = [
-            FieldConfig(name="name", comparator=ComparatorType.STRING, weight=0.6),
-            FieldConfig(name="age", comparator=ComparatorType.NUMERIC, weight=0.4),
+            FieldConfig(
+                name=FieldName("name"), comparator=ComparatorType.STRING, weight=0.6
+            ),
+            FieldConfig(
+                name=FieldName("age"), comparator=ComparatorType.NUMERIC, weight=0.4
+            ),
         ]
 
         engine = MatchingEngine(field_configs)
@@ -31,12 +36,18 @@ class TestMatchingEngine:
         """Test comparator setup."""
         field_configs = [
             FieldConfig(
-                name="name", comparator=ComparatorType.STRING, method="levenshtein"
+                name=FieldName("name"),
+                comparator=ComparatorType.STRING,
+                method="levenshtein",
             ),
             FieldConfig(
-                name="score", comparator=ComparatorType.NUMERIC, method="threshold"
+                name=FieldName("score"),
+                comparator=ComparatorType.NUMERIC,
+                method="threshold",
             ),
-            FieldConfig(name="date", comparator=ComparatorType.DATE, method="exact"),
+            FieldConfig(
+                name=FieldName("date"), comparator=ComparatorType.DATE, method="exact"
+            ),
         ]
 
         engine = MatchingEngine(field_configs)
@@ -49,13 +60,13 @@ class TestMatchingEngine:
         """Test comparing identical records."""
         field_configs = [
             FieldConfig(
-                name="name",
+                name=FieldName("name"),
                 comparator=ComparatorType.STRING,
                 weight=0.5,
                 method="exact",
             ),
             FieldConfig(
-                name="email",
+                name=FieldName("email"),
                 comparator=ComparatorType.STRING,
                 weight=0.5,
                 method="exact",
@@ -64,8 +75,8 @@ class TestMatchingEngine:
 
         engine = MatchingEngine(field_configs, global_threshold=0.9)
 
-        record1 = {"name": "John Smith", "email": "john@test.com"}
-        record2 = {"name": "John Smith", "email": "john@test.com"}
+        record1 = create_record(name="John Smith", email="john@test.com")
+        record2 = create_record(name="John Smith", email="john@test.com")
 
         result = engine.compare_records(RecordId(1), record1, RecordId(2), record2)
 
@@ -78,7 +89,7 @@ class TestMatchingEngine:
         """Test comparing completely different records."""
         field_configs = [
             FieldConfig(
-                name="name",
+                name=FieldName("name"),
                 comparator=ComparatorType.STRING,
                 weight=1.0,
                 method="exact",
@@ -87,8 +98,8 @@ class TestMatchingEngine:
 
         engine = MatchingEngine(field_configs, global_threshold=0.9)
 
-        record1 = {"name": "John Smith"}
-        record2 = {"name": "Jane Doe"}
+        record1 = create_record(name="John Smith")
+        record2 = create_record(name="Jane Doe")
 
         result = engine.compare_records(RecordId(1), record1, RecordId(2), record2)
 
@@ -100,10 +111,13 @@ class TestMatchingEngine:
         """Test comparing records with missing fields."""
         field_configs = [
             FieldConfig(
-                name="name", comparator=ComparatorType.STRING, weight=0.5, required=True
+                name=FieldName("name"),
+                comparator=ComparatorType.STRING,
+                weight=0.5,
+                required=True,
             ),
             FieldConfig(
-                name="email",
+                name=FieldName("email"),
                 comparator=ComparatorType.STRING,
                 weight=0.5,
                 required=False,
@@ -112,8 +126,8 @@ class TestMatchingEngine:
 
         engine = MatchingEngine(field_configs)
 
-        record1 = {"name": "John Smith"}  # Missing email
-        record2 = {"name": "John Smith", "email": "john@test.com"}
+        record1 = create_record(name="John Smith")  # Missing email
+        record2 = create_record(name="John Smith", email="john@test.com")
 
         result = engine.compare_records(RecordId(1), record1, RecordId(2), record2)
 
@@ -125,14 +139,17 @@ class TestMatchingEngine:
         """Test comparing records missing required fields."""
         field_configs = [
             FieldConfig(
-                name="name", comparator=ComparatorType.STRING, weight=1.0, required=True
+                name=FieldName("name"),
+                comparator=ComparatorType.STRING,
+                weight=1.0,
+                required=True,
             ),
         ]
 
         engine = MatchingEngine(field_configs, require_all_fields=True)
 
-        record1 = {"email": "john@test.com"}  # Missing required name
-        record2 = {"name": "John Smith"}
+        record1 = create_record(email="john@test.com")  # Missing required name
+        record2 = create_record(name="John Smith")
 
         result = engine.compare_records(RecordId(1), record1, RecordId(2), record2)
 
@@ -144,7 +161,7 @@ class TestMatchingEngine:
         """Test field-specific thresholds."""
         field_configs = [
             FieldConfig(
-                name="name",
+                name=FieldName("name"),
                 comparator=ComparatorType.STRING,
                 weight=1.0,
                 method="levenshtein",
@@ -154,8 +171,8 @@ class TestMatchingEngine:
 
         engine = MatchingEngine(field_configs, global_threshold=0.5)
 
-        record1 = {"name": "John Smith"}
-        record2 = {"name": "Jon Smith"}  # Similar but not identical
+        record1 = create_record(name="John Smith")
+        record2 = create_record(name="Jon Smith")  # Similar but not identical
 
         result = engine.compare_records(RecordId(1), record1, RecordId(2), record2)
 
@@ -167,7 +184,7 @@ class TestMatchingEngine:
         """Test batch comparison."""
         field_configs = [
             FieldConfig(
-                name="name",
+                name=FieldName("name"),
                 comparator=ComparatorType.STRING,
                 weight=1.0,
                 method="exact",
@@ -177,8 +194,8 @@ class TestMatchingEngine:
         engine = MatchingEngine(field_configs)
 
         record_pairs = [
-            (RecordId(1), {"name": "John"}, RecordId(2), {"name": "John"}),
-            (RecordId(3), {"name": "Jane"}, RecordId(4), {"name": "Bob"}),
+            ("1", create_record(name="John"), "2", create_record(name="John")),
+            ("3", create_record(name="Jane"), "4", create_record(name="Bob")),
         ]
 
         results = engine.batch_compare(record_pairs)
@@ -191,8 +208,12 @@ class TestMatchingEngine:
     def test_get_field_weights(self):
         """Test getting field weights."""
         field_configs = [
-            FieldConfig(name="name", comparator=ComparatorType.STRING, weight=0.6),
-            FieldConfig(name="email", comparator=ComparatorType.STRING, weight=0.4),
+            FieldConfig(
+                name=FieldName("name"), comparator=ComparatorType.STRING, weight=0.6
+            ),
+            FieldConfig(
+                name=FieldName("email"), comparator=ComparatorType.STRING, weight=0.4
+            ),
         ]
 
         engine = MatchingEngine(field_configs)
@@ -204,7 +225,9 @@ class TestMatchingEngine:
     def test_update_match_strategy(self):
         """Test updating match strategy."""
         field_configs = [
-            FieldConfig(name="name", comparator=ComparatorType.STRING, weight=1.0),
+            FieldConfig(
+                name=FieldName("name"), comparator=ComparatorType.STRING, weight=1.0
+            ),
         ]
 
         engine = MatchingEngine(field_configs)
@@ -221,7 +244,7 @@ class TestMatchingEngine:
                 record1_id=RecordId(1),
                 record2_id=RecordId(2),
                 overall_score=SimilarityScore(0.9),
-                field_scores={"name": SimilarityScore(0.9)},
+                field_scores={FieldName("name"): SimilarityScore(0.9)},
                 is_match=True,
                 confidence=0.85,
             ),
@@ -229,14 +252,16 @@ class TestMatchingEngine:
                 record1_id=RecordId(3),
                 record2_id=RecordId(4),
                 overall_score=SimilarityScore(0.3),
-                field_scores={"name": SimilarityScore(0.3)},
+                field_scores={FieldName("name"): SimilarityScore(0.3)},
                 is_match=False,
                 confidence=0.2,
             ),
         ]
 
         field_configs = [
-            FieldConfig(name="name", comparator=ComparatorType.STRING, weight=1.0),
+            FieldConfig(
+                name=FieldName("name"), comparator=ComparatorType.STRING, weight=1.0
+            ),
         ]
 
         engine = MatchingEngine(field_configs)
@@ -251,14 +276,21 @@ class TestMatchingEngine:
     def test_calculate_confidence(self):
         """Test confidence calculation."""
         field_configs = [
-            FieldConfig(name="name", comparator=ComparatorType.STRING, weight=0.5),
-            FieldConfig(name="email", comparator=ComparatorType.STRING, weight=0.5),
+            FieldConfig(
+                name=FieldName("name"), comparator=ComparatorType.STRING, weight=0.5
+            ),
+            FieldConfig(
+                name=FieldName("email"), comparator=ComparatorType.STRING, weight=0.5
+            ),
         ]
 
         engine = MatchingEngine(field_configs)
 
         # High consistency should give high confidence
-        field_scores = {"name": SimilarityScore(0.9), "email": SimilarityScore(0.8)}
+        field_scores = {
+            FieldName("name"): SimilarityScore(0.9),
+            FieldName("email"): SimilarityScore(0.8),
+        }
 
         confidence = engine._calculate_confidence(
             field_scores, SimilarityScore(0.85), []
@@ -271,21 +303,25 @@ class TestMatchingEngine:
     def test_comparison_error_handling(self, mock_logger):
         """Test handling of comparison errors."""
         field_configs = [
-            FieldConfig(name="name", comparator=ComparatorType.STRING, weight=1.0),
+            FieldConfig(
+                name=FieldName("name"), comparator=ComparatorType.STRING, weight=1.0
+            ),
         ]
 
         engine = MatchingEngine(field_configs)
 
         # Mock comparator to raise exception
-        engine.comparators["name"].compare = Mock(side_effect=Exception("Test error"))
+        engine.comparators[FieldName("name")].compare = Mock(
+            side_effect=Exception("Test error")
+        )
 
-        record1 = {"name": "John"}
-        record2 = {"name": "Jane"}
+        record1 = create_record(name="John")
+        record2 = create_record(name="Jane")
 
         result = engine.compare_records(RecordId(1), record1, RecordId(2), record2)
 
         # Should handle error gracefully
-        assert result.field_scores["name"] == SimilarityScore(0.0)
+        assert result.field_scores[FieldName("name")] == SimilarityScore(0.0)
         mock_logger.warning.assert_called()
 
 
@@ -294,19 +330,25 @@ def sample_field_configs():
     """Sample field configurations for testing."""
     return [
         FieldConfig(
-            name="name",
+            name=FieldName("name"),
             comparator=ComparatorType.STRING,
             weight=0.4,
             method="levenshtein",
         ),
         FieldConfig(
-            name="email", comparator=ComparatorType.STRING, weight=0.3, method="exact"
+            name=FieldName("email"),
+            comparator=ComparatorType.STRING,
+            weight=0.3,
+            method="exact",
         ),
         FieldConfig(
-            name="age", comparator=ComparatorType.NUMERIC, weight=0.2, tolerance=1.0
+            name=FieldName("age"),
+            comparator=ComparatorType.NUMERIC,
+            weight=0.2,
+            tolerance=1.0,
         ),
         FieldConfig(
-            name="score",
+            name=FieldName("score"),
             comparator=ComparatorType.NUMERIC,
             weight=0.1,
             method="percentage",
@@ -318,19 +360,16 @@ def test_matching_engine_integration(sample_field_configs):
     """Integration test for matching engine."""
     engine = MatchingEngine(sample_field_configs, global_threshold=0.8)
 
-    record1 = {
-        "name": "John Smith",
-        "email": "john.smith@email.com",
-        "age": 30,
-        "score": 85.5,
-    }
+    record1 = create_record(
+        name="John Smith", email="john.smith@email.com", age=30, score=85.5
+    )
 
-    record2 = {
-        "name": "Jon Smith",  # Similar
-        "email": "john.smith@email.com",  # Same
-        "age": 30,  # Same
-        "score": 86.0,  # Close
-    }
+    record2 = create_record(
+        name="Jon Smith",  # Similar
+        email="john.smith@email.com",  # Same
+        age=30,  # Same
+        score=86.0,  # Close
+    )
 
     result = engine.compare_records(RecordId(1), record1, RecordId(2), record2)
 

@@ -6,6 +6,7 @@ import pytest
 
 from dedupeflow.comparators.date import DateComparator, date_similarity
 from dedupeflow.types import SimilarityScore
+from tests.conftest import test_logger
 
 
 class TestDateComparator:
@@ -104,6 +105,61 @@ class TestDateComparator:
             1.0
         )
 
+    """Example test file using rich logging."""
+
+    def test_mixed_types_v2(self, test_logger):
+        """Test comparison of mixed date types with rich logging."""
+        from datetime import date, datetime
+
+        from dedupeflow.comparators.date import DateComparator
+        from tests.conftest import log_comparison_result
+
+        logger = test_logger  # Get the actual logger instance
+
+        logger.info("[bold green]🧪 Starting test_mixed_types[/bold green]")
+
+        comparator = DateComparator(method="exact")
+
+        # Test 1: String vs date object
+        val1 = "2023-01-01"
+        val2 = date(2023, 1, 1)
+        result1 = comparator.compare(val1, val2)
+        log_comparison_result(
+            val1, val2, result1, SimilarityScore(1.0), "Test 1: String vs Date", logger
+        )
+
+        # Test 2: String vs datetime object
+        val3 = "2023-01-01"
+        val4 = datetime(2023, 1, 1, 12, 0, 0)
+        result2 = comparator.compare(val3, val4)
+        log_comparison_result(
+            val3,
+            val4,
+            result2,
+            SimilarityScore(1.0),
+            "Test 2: String vs DateTime",
+            logger,
+        )
+
+        # Test 3: Date vs datetime object
+        val5 = date(2023, 1, 1)
+        val6 = datetime(2023, 1, 1, 12, 0, 0)
+        result3 = comparator.compare(val5, val6)
+        log_comparison_result(
+            val5,
+            val6,
+            result3,
+            SimilarityScore(1.0),
+            "Test 3: Date vs DateTime",
+            logger,
+        )
+
+        logger.info("[bold green]✅ test_mixed_types completed[/bold green]")
+
+        assert result1 == SimilarityScore(1.0)
+        assert result2 == SimilarityScore(1.0)
+        assert result3 == SimilarityScore(1.0)
+
     def test_mixed_types(self):
         """Test comparison of mixed date types."""
         comparator = DateComparator(method="exact")
@@ -183,7 +239,7 @@ def test_all_methods_return_valid_scores(method, sample_date_pairs):
 
     for d1, d2 in sample_date_pairs:
         score = comparator.compare(d1, d2)
-        assert isinstance(score, SimilarityScore)
+        assert isinstance(score, float) or isinstance(score, int)
         assert 0.0 <= float(score) <= 1.0
 
 

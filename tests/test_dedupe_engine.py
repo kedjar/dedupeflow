@@ -8,6 +8,7 @@ import pytest
 from dedupeflow.core.blocking import StandardBlockingStrategy
 from dedupeflow.core.engine import DedupeEngine
 from dedupeflow.models import ComparatorType, DedupeConfig, FieldConfig
+from dedupeflow.types import DedupeResults, FieldName, RecordId
 
 
 class TestDedupeEngine:
@@ -46,13 +47,13 @@ class TestDedupeEngine:
         config = DedupeConfig(
             fields=[
                 FieldConfig(
-                    name="name",
+                    name=FieldName("name"),
                     comparator=ComparatorType.STRING,
                     weight=0.5,
                     method="exact",
                 ),
                 FieldConfig(
-                    name="email",
+                    name=FieldName("email"),
                     comparator=ComparatorType.STRING,
                     weight=0.5,
                     method="exact",
@@ -241,13 +242,13 @@ class TestDedupeEngineIntegration:
         config = DedupeConfig(
             fields=[
                 FieldConfig(
-                    name="name",
+                    name=FieldName("name"),
                     comparator=ComparatorType.STRING,
                     weight=0.4,
                     method="exact",
                 ),
                 FieldConfig(
-                    name="email",
+                    name=FieldName("email"),
                     comparator=ComparatorType.STRING,
                     weight=0.6,
                     method="exact",

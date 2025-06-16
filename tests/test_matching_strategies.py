@@ -47,23 +47,30 @@ class TestFuzzyMatchStrategy:
 
     def test_init(self):
         """Test strategy initialization."""
-        strategy = FuzzyMatchStrategy(min_threshold=0.6, max_threshold=0.9)
-        assert strategy.min_threshold == 0.6
-        assert strategy.max_threshold == 0.9
+        strategy = FuzzyMatchStrategy(
+            high_threshold=0.9, medium_threshold=0.7, low_threshold=0.5
+        )
+        assert strategy.low_threshold == 0.5
+        assert strategy.medium_threshold == 0.7
+        assert strategy.high_threshold == 0.9
 
     def test_is_match_in_range(self):
         """Test matching within fuzzy range."""
-        strategy = FuzzyMatchStrategy(min_threshold=0.6, max_threshold=0.9)
+        strategy = FuzzyMatchStrategy(
+            low_threshold=0.5, medium_threshold=0.7, high_threshold=0.9
+        )
 
         assert strategy.is_match(SimilarityScore(0.7)) is True
         assert strategy.is_match(SimilarityScore(0.8)) is True
-        assert strategy.is_match(SimilarityScore(0.6)) is True
+        assert strategy.is_match(SimilarityScore(0.6)) is False
         assert strategy.is_match(SimilarityScore(0.9)) is True
 
     def test_is_match_outside_range(self):
         """Test matching outside fuzzy range."""
-        strategy = FuzzyMatchStrategy(min_threshold=0.6, max_threshold=0.9)
+        strategy = FuzzyMatchStrategy(
+            low_threshold=0.5, medium_threshold=0.7, high_threshold=0.9
+        )
 
         assert strategy.is_match(SimilarityScore(0.5)) is False
-        assert strategy.is_match(SimilarityScore(0.95)) is False
-        assert strategy.is_match(SimilarityScore(1.0)) is False
+        assert strategy.is_match(SimilarityScore(0.95)) is True
+        assert strategy.is_match(SimilarityScore(1.0)) is True

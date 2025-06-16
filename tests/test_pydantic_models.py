@@ -22,7 +22,7 @@ class TestFieldConfig:
     def test_valid_field_config(self):
         """Test creating valid field configuration."""
         config = FieldConfig(
-            name="test_field",
+            name=FieldName("test_field"),
             comparator=ComparatorType.STRING,
             weight=0.5,
             method="levenshtein",
@@ -30,7 +30,7 @@ class TestFieldConfig:
             required=True,
         )
 
-        assert config.name == "test_field"
+        assert config.name == FieldName("test_field")
         assert config.comparator == ComparatorType.STRING
         assert config.weight == 0.5
         assert config.method == "levenshtein"
@@ -39,7 +39,9 @@ class TestFieldConfig:
 
     def test_default_values(self):
         """Test default values for field configuration."""
-        config = FieldConfig(name="test_field", comparator=ComparatorType.STRING)
+        config = FieldConfig(
+            name=FieldName("test_field"), comparator=ComparatorType.STRING
+        )
 
         assert config.weight == 1.0
         assert config.method is None
@@ -50,12 +52,18 @@ class TestFieldConfig:
         """Test validation of weight field."""
         # Weight too high
         with pytest.raises(ValidationError):
-            FieldConfig(name="test_field", comparator=ComparatorType.STRING, weight=1.5)
+            FieldConfig(
+                name=FieldName("test_field"),
+                comparator=ComparatorType.STRING,
+                weight=1.5,
+            )
 
         # Weight negative
         with pytest.raises(ValidationError):
             FieldConfig(
-                name="test_field", comparator=ComparatorType.STRING, weight=-0.1
+                name=FieldName("test_field"),
+                comparator=ComparatorType.STRING,
+                weight=-0.1,
             )
 
     def test_invalid_threshold(self):
@@ -63,13 +71,17 @@ class TestFieldConfig:
         # Threshold too high
         with pytest.raises(ValidationError):
             FieldConfig(
-                name="test_field", comparator=ComparatorType.STRING, threshold=1.5
+                name=FieldName("test_field"),
+                comparator=ComparatorType.STRING,
+                threshold=1.5,
             )
 
         # Threshold negative
         with pytest.raises(ValidationError):
             FieldConfig(
-                name="test_field", comparator=ComparatorType.STRING, threshold=-0.1
+                name=FieldName("test_field"),
+                comparator=ComparatorType.STRING,
+                threshold=-0.1,
             )
 
 
@@ -79,8 +91,12 @@ class TestDedupeConfig:
     def test_valid_config(self):
         """Test creating valid deduplication configuration."""
         fields = [
-            FieldConfig(name="name", comparator=ComparatorType.STRING, weight=0.5),
-            FieldConfig(name="email", comparator=ComparatorType.STRING, weight=0.5),
+            FieldConfig(
+                name=FieldName("name"), comparator=ComparatorType.STRING, weight=0.5
+            ),
+            FieldConfig(
+                name=FieldName("email"), comparator=ComparatorType.STRING, weight=0.5
+            ),
         ]
 
         config = DedupeConfig(
@@ -88,14 +104,14 @@ class TestDedupeConfig:
             global_threshold=0.8,
             require_all_fields=False,
             enable_blocking=True,
-            blocking_keys=["name"],
+            blocking_keys=[FieldName("name")],
         )
 
         assert len(config.fields) == 2
         assert config.global_threshold == 0.8
         assert config.require_all_fields is False
         assert config.enable_blocking is True
-        assert config.blocking_keys == ["name"]
+        assert config.blocking_keys == [FieldName("name")]
 
     def test_empty_fields_validation(self):
         """Test validation when fields list is empty."""
@@ -107,8 +123,12 @@ class TestDedupeConfig:
     def test_zero_weight_validation(self):
         """Test validation when all weights sum to zero."""
         fields = [
-            FieldConfig(name="name", comparator=ComparatorType.STRING, weight=0.0),
-            FieldConfig(name="email", comparator=ComparatorType.STRING, weight=0.0),
+            FieldConfig(
+                name=FieldName("name"), comparator=ComparatorType.STRING, weight=0.0
+            ),
+            FieldConfig(
+                name=FieldName("email"), comparator=ComparatorType.STRING, weight=0.0
+            ),
         ]
 
         with pytest.raises(
@@ -119,8 +139,12 @@ class TestDedupeConfig:
     def test_negative_weights_validation(self):
         """Test validation with negative total weights."""
         fields = [
-            FieldConfig(name="name", comparator=ComparatorType.STRING, weight=-0.5),
-            FieldConfig(name="email", comparator=ComparatorType.STRING, weight=-0.3),
+            FieldConfig(
+                name=FieldName("name"), comparator=ComparatorType.STRING, weight=-0.5
+            ),
+            FieldConfig(
+                name=FieldName("email"), comparator=ComparatorType.STRING, weight=-0.3
+            ),
         ]
 
         with pytest.raises(
@@ -131,7 +155,7 @@ class TestDedupeConfig:
     def test_invalid_global_threshold(self):
         """Test validation of global threshold."""
         fields = [
-            FieldConfig(name="name", comparator=ComparatorType.STRING),
+            FieldConfig(name=FieldName("name"), comparator=ComparatorType.STRING),
         ]
 
         # Threshold too high
@@ -229,7 +253,7 @@ class TestDedupeResults:
 
         config = DedupeConfig(
             fields=[
-                FieldConfig(name="name", comparator=ComparatorType.STRING),
+                FieldConfig(name=FieldName("name"), comparator=ComparatorType.STRING),
             ]
         )
 
@@ -262,7 +286,7 @@ class TestDedupeResults:
 
         config = DedupeConfig(
             fields=[
-                FieldConfig(name="name", comparator=ComparatorType.STRING),
+                FieldConfig(name=FieldName("name"), comparator=ComparatorType.STRING),
             ]
         )
 
@@ -281,7 +305,7 @@ class TestDedupeResults:
         """Test validation of negative values."""
         config = DedupeConfig(
             fields=[
-                FieldConfig(name="name", comparator=ComparatorType.STRING),
+                FieldConfig(name=FieldName("name"), comparator=ComparatorType.STRING),
             ]
         )
 
